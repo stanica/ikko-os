@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# iKKO Web Client (Unofficial)
+
+![iKKO Web Client](public/site.png)
+
+An unofficial web client for iKKO, built through reverse engineering of the authentication flow and API.
+
+## Disclaimer
+
+**This is an independent research project and is NOT affiliated with, endorsed by, or connected to iKKO in any way.**
+
+This project was created for:
+
+- Educational purposes and personal use
+- Understanding and documenting the iKKO API
+- Interoperability with iKKO services
+
+Use at your own risk. The authors are not responsible for any consequences of using this software.
+
+## Known Limitations
+
+- This client may break at any time if iKKO changes their API.
+- Not all features of the official app may be supported.
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Run the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Configuration
+
+You'll need the following credentials from your iKKO device. Enter them in the Settings modal within the app.
+
+### Required Credentials
+
+| Field             | How to Get It              |
+| ----------------- | -------------------------- |
+| **Email**         | Your iKKO account email    |
+| **Password**      | Your iKKO account password |
+| **IMEI**          | See below                  |
+| **Serial Number** | See below                  |
+
+### Getting IMEI
+
+**Option 1: Via ADB**
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+adb shell getprop sys.skyroam.silver.sim1
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Option 2: Via Android UI**
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+**Settings** → **About Phone** → **IMEI (sim slot 1)**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Getting Serial Number
 
-## Learn More
+**Option 1: Via ADB**
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+adb shell getprop ro.serialno
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Option 2: Check device list**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The serial number also appears in `adb devices` output:
 
-## Deploy on Vercel
+```bash
+adb devices
+# Output: IKMBXXXXXXXXXX    device
+#         ^^^^^^^^^^^^^^ this is the serial number
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tech Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js](https://nextjs.org) - React framework
+- [Tailwind CSS](https://tailwindcss.com) - Styling
+- [Lucide React](https://lucide.dev) - Icons
