@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Settings, MessageSquare, FileText, Microscope, Moon, Sun } from 'lucide-react';
+import { Settings, MessageSquare, FileText, Microscope, Podcast, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 
 const tabs = [
   { id: 'chat', label: 'Chat', href: '/', icon: MessageSquare },
   { id: 'notes', label: 'Notes', href: '/notes', icon: FileText },
   { id: 'studies', label: 'Studies', href: '/studies', icon: Microscope },
+  { id: 'podcasts', label: 'Podcasts', href: '/podcasts', icon: Podcast },
 ];
 
 export default function ChatHeader({
