@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Plus, Type, FileText, Globe, Trash2, Upload } from 'lucide-react';
+import { X, Plus, Type, FileText, Globe, Trash2 } from 'lucide-react';
 
 const SOURCE_TYPES = [
   { id: 'text', label: 'Text', icon: Type, description: 'Paste or type text' },
@@ -15,7 +15,6 @@ export default function CreatePodcastModal({ onClose, onSubmit, isGenerating }) 
   const [activeSourceType, setActiveSourceType] = useState(null);
   const [textInput, setTextInput] = useState('');
   const [urlInput, setUrlInput] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -43,16 +42,6 @@ export default function CreatePodcastModal({ onClose, onSubmit, isGenerating }) 
       }
       setSources([...sources, { type: 'website', content: urlInput.trim(), preview: urlInput.trim() }]);
       setUrlInput('');
-    } else if (activeSourceType === 'pdf') {
-      if (!selectedFile) {
-        setError('Please select a PDF file');
-        return;
-      }
-      setSources([...sources, { type: 'pdf', content: selectedFile, preview: selectedFile.name }]);
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
 
     setActiveSourceType(null);
@@ -70,8 +59,14 @@ export default function CreatePodcastModal({ onClose, onSubmit, isGenerating }) 
         setError('Please select a PDF file');
         return;
       }
-      setSelectedFile(file);
+      // Auto-add PDF source immediately on selection
+      setSources(prev => [...prev, { type: 'pdf', content: file, preview: file.name }]);
+      setActiveSourceType(null);
+      setShowAddSource(true);
       setError(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -153,7 +148,13 @@ export default function CreatePodcastModal({ onClose, onSubmit, isGenerating }) 
                   <button
                     key={type.id}
                     className="group flex flex-col items-center gap-2 p-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl cursor-pointer hover:border-brand-500 hover:bg-brand-100 dark:hover:bg-brand-500/20 hover:scale-[1.02] transition-all"
-                    onClick={() => setActiveSourceType(type.id)}
+                    onClick={() => {
+                      if (type.id === 'pdf') {
+                        fileInputRef.current?.click();
+                      } else {
+                        setActiveSourceType(type.id);
+                      }
+                    }}
                   >
                     <type.icon size={24} className="text-gray-500 dark:text-gray-400 group-hover:text-brand-500 transition-colors" />
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">{type.label}</span>
@@ -231,58 +232,14 @@ export default function CreatePodcastModal({ onClose, onSubmit, isGenerating }) 
             </div>
           )}
 
-          {/* PDF Input */}
-          {activeSourceType === 'pdf' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Upload PDF
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,application/pdf"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              <div
-                className="w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-center cursor-pointer hover:border-brand-500 hover:bg-brand-100 dark:hover:bg-brand-500/20 hover:scale-[1.01] transition-all"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {selectedFile ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <FileText size={24} className="text-brand-500" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                      {selectedFile.name}
-                    </span>
-                  </div>
-                ) : (
-                  <>
-                    <Upload size={32} className="mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Click to select a PDF file
-                    </p>
-                  </>
-                )}
-              </div>
-              <div className="flex gap-2 mt-3">
-                <button
-                  className="flex-1 py-2.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  onClick={() => {
-                    setActiveSourceType(null);
-                    setSelectedFile(null);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="flex-1 py-2.5 px-4 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors"
-                  onClick={addSource}
-                >
-                  Add PDF
-                </button>
-              </div>
-            </div>
-          )}
+          {/* PDF Input - opens file picker directly, auto-adds on selection */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
 
           {/* Error */}
           {error && (

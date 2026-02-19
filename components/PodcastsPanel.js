@@ -40,12 +40,52 @@ export default function PodcastsPanel() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState(null);
 
-  // Load podcasts from localStorage on mount
+  // Load podcasts: fetch from server, merge with localStorage cache
   useEffect(() => {
-    const stored = loadPodcasts();
-    setPodcasts(stored);
-    setLoading(false);
-  }, []);
+    const fetchPodcasts = async () => {
+      // Show cached data immediately
+      const cached = loadPodcasts();
+      setPodcasts(cached);
+
+      try {
+        const response = await authFetch('/api/podcasts/list', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: 50, offset: 0 }),
+        });
+
+        const data = await response.json();
+
+        if (data.code === 200 && data.data?.records) {
+          const serverPodcasts = data.data.records.map(record => ({
+            id: record.id?.toString() || record.sessionId,
+            sessionId: record.sessionId,
+            title: record.name || 'Untitled Podcast',
+            summary: record.summary || '',
+            audioUrl: record.audioUrl,
+            script: record.contentPath,
+            sourceCount: record.sources?.length || 0,
+            createdAt: record.createTime ? new Date(record.createTime).toISOString() : undefined,
+          }));
+
+          // Merge: server records take priority, keep local-only records
+          const serverIds = new Set(serverPodcasts.map(p => p.sessionId).filter(Boolean));
+          const localOnly = cached.filter(p => p.sessionId && !serverIds.has(p.sessionId));
+          const merged = [...localOnly, ...serverPodcasts];
+
+          setPodcasts(merged);
+          savePodcasts(merged);
+        }
+      } catch (error) {
+        console.error('Failed to fetch podcasts from server:', error);
+        // Cached data already shown, no action needed
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPodcasts();
+  }, [authFetch]);
 
   const viewPodcastDetails = (podcast) => {
     setSelectedPodcast(podcast);
@@ -64,7 +104,7 @@ export default function PodcastsPanel() {
       if (hasPdf) {
         // Use FormData for file uploads
         const formData = new FormData();
-        formData.append('appId', 'AI-Podcast');
+        formData.append('language', navigator.language?.split('-')[0] || 'en');
 
         for (const source of sources) {
           if (source.type === 'pdf' && source.content instanceof File) {
@@ -87,8 +127,8 @@ export default function PodcastsPanel() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            appId: 'AI-Podcast',
             sources: sources,
+            language: navigator.language?.split('-')[0] || 'en',
           }),
         });
       }
@@ -129,7 +169,7 @@ export default function PodcastsPanel() {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedPodcast) return;
 
     if (!confirm('Are you sure you want to delete this podcast? This action cannot be undone.')) {
@@ -138,7 +178,25 @@ export default function PodcastsPanel() {
 
     setIsDeleting(true);
 
-    // Remove from localStorage
+    try {
+      // Delete from server if we have a sessionId
+      if (selectedPodcast.sessionId) {
+        const response = await authFetch('/api/podcasts/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: selectedPodcast.sessionId }),
+        });
+
+        const data = await response.json();
+        if (data.code !== 200 && !data.success) {
+          console.error('Server delete failed:', data);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting podcast from server:', error);
+    }
+
+    // Always remove from localStorage regardless of server result
     const updatedPodcasts = podcasts.filter(
       p => (p.id || p.sessionId) !== (selectedPodcast.id || selectedPodcast.sessionId)
     );

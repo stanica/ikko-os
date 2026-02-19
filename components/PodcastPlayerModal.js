@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Trash2, Download, Clock } from 'lucide-react';
+import { X, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Trash2, Download, Clock, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return '0:00';
@@ -31,11 +31,21 @@ export default function PodcastPlayerModal({ podcast, onClose, onDelete, isDelet
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showTranscript, setShowTranscript] = useState(false);
 
   const title = podcast.sessionName || podcast.title || 'Untitled Podcast';
   const audioUrl = podcast.audioUrl || podcast.audio_url;
   const createdAt = podcast.createTime || podcast.createdAt;
   const sourceCount = podcast.sourceCount || podcast.sources?.length || 0;
+  const transcript = podcast.script || podcast.speechScript;
+  const summary = podcast.summary || podcast.speechSummarize;
+
+  // Derive download filename extension from the audio URL
+  const downloadName = (() => {
+    if (!audioUrl) return `${title}.wav`;
+    const ext = audioUrl.split('.').pop()?.split('?')[0] || 'wav';
+    return `${title}.${ext}`;
+  })();
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -44,7 +54,13 @@ export default function PodcastPlayerModal({ podcast, onClose, onDelete, isDelet
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleDurationChange = () => setDuration(audio.duration);
     const handleEnded = () => setIsPlaying(false);
-    const handleCanPlay = () => setIsLoading(false);
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      if (!audio.dataset.autoPlayed) {
+        audio.dataset.autoPlayed = '1';
+        audio.play().then(() => setIsPlaying(true)).catch(() => {});
+      }
+    };
     const handleError = (e) => {
       setIsLoading(false);
       setError('Failed to load audio. The file may not be available.');
@@ -131,7 +147,7 @@ export default function PodcastPlayerModal({ podcast, onClose, onDelete, isDelet
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000] p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-[500px] shadow-2xl animate-slide-up">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-[500px] max-h-[90vh] flex flex-col shadow-2xl animate-slide-up">
         {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate pr-4">
@@ -146,7 +162,7 @@ export default function PodcastPlayerModal({ podcast, onClose, onDelete, isDelet
         </div>
 
         {/* Content */}
-        <div className="p-5">
+        <div className="p-5 flex-1 overflow-y-auto">
           {/* Podcast Info */}
           <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-6">
             {sourceCount > 0 && (
@@ -242,7 +258,35 @@ export default function PodcastPlayerModal({ podcast, onClose, onDelete, isDelet
                 </div>
               )}
             </div>
-          ) : (
+          ) : null}
+
+          {/* Summary */}
+          {audioUrl && summary && (
+            <div className="mt-4 text-sm text-gray-600 dark:text-gray-300">
+              {summary}
+            </div>
+          )}
+
+          {/* Transcript */}
+          {audioUrl && transcript && (
+            <div className="mt-4">
+              <button
+                className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-brand-500 transition-colors"
+                onClick={() => setShowTranscript(!showTranscript)}
+              >
+                <FileText size={16} />
+                Transcript
+                {showTranscript ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              {showTranscript && (
+                <div className="mt-2 max-h-48 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
+                  {transcript}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!audioUrl && (
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-8 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
                 <div className="w-6 h-6 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
@@ -262,7 +306,7 @@ export default function PodcastPlayerModal({ podcast, onClose, onDelete, isDelet
           {audioUrl && (
             <a
               href={audioUrl}
-              download={`${title}.mp3`}
+              download={downloadName}
               className="flex-1 py-2.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-medium text-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-1.5"
             >
               <Download size={16} /> Download

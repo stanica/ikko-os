@@ -44,6 +44,7 @@ export async function POST(request) {
 
       textContent = formData.get("text");
       urlContent = formData.get("url");
+      var language = formData.get("language");
 
       const file = formData.get("file");
       if (file && file instanceof Blob) {
@@ -73,6 +74,7 @@ export async function POST(request) {
         );
       }
 
+      var language = body.language;
       const sources = body.sources || [];
       console.log(
         "🎙️ Podcast generate request with",
@@ -117,7 +119,7 @@ export async function POST(request) {
     );
 
     const fields = {
-      language: "en",
+      language: language || "en",
     };
     if (textContent) fields.text = textContent;
     if (urlContent) fields.url = urlContent;
