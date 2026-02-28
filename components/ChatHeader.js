@@ -33,7 +33,7 @@ export default function ChatHeader({
     <div className="bg-header-bg text-white p-5 shadow-md relative z-10">
       <div className="flex justify-between items-start flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold m-0">Ikko OS</h1>
+          <h1 className="text-2xl font-semibold m-0">iKKO OS</h1>
           <div className="flex items-center gap-2 text-xs mt-2">
             <div
               className={`w-2 h-2 rounded-full ${
@@ -55,8 +55,10 @@ export default function ChatHeader({
             >
               <option value="gpt4">GPT-4</option>
               <option value="gpt5">GPT-5</option>
+              <option value="claude">Claude</option>
               <option value="deepseekV3">DeepSeek V3</option>
-              <option value="gemini-flash">Gemini</option>
+              <option value="deepseekR1">DeepSeek R1</option>
+              <option value="gemini">Gemini</option>
             </select>
           </div>
           <button
